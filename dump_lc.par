@@ -1,0 +1,7 @@
+mode,i,q,0,,,"0 - light curve, 1 - ephemerides, 2 - attitude"
+start_time_utc,s,q,"2008-03-19T05:35:00",,,""
+stop_time_utc,s,q,"2008-03-19T05:55:00",,,""
+output,s,q,"output.txt",,,""
+target,s,h,"ACS",,,""
+maxfiles,i,h,-1,,,""
+orbit_accy,r,h,30.,,,"orbit accuracy"

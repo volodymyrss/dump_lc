@@ -1,0 +1,26 @@
+C_EXEC_1_NAME		= dump_lc
+
+TAR_FILE_NAME		= ${C_EXEC_1_NAME}-3.2
+C_EXEC_1_SOURCES	= ${C_EXEC_1_NAME}.C 
+C_EXEC_1_OBJECTS	= ${C_EXEC_1_NAME}.o 
+C_EXEC_1_LIBRARIES	=  -ldal3aux -ldal3gen -ldal3hk -lsla_c -lcommon -lpil -lril -ldal -lcfitsio ${LAST_LIBS}
+
+EXTERN_1_INC_DIR	= 
+EXTERN_1_LIB_DIR	= 
+
+${C_EXEC_1_NAME}:	${C_EXEC_1_OBJECTS}
+			${CXX}  ${ALL_CXX_CFLAGS} -o $@ $^ ${ALL_CXX_LDFLAGS} ${C_EXEC_1_LIBRARIES} 
+
+CLEAN_TARGETS		+= ${C_EXEC_1_NAME}
+ALL_TARGETS		+= ${C_EXEC_1_NAME}
+TO_INSTALL_BIN		+= ${C_EXEC_1_NAME}
+TO_INSTALL_HELP		+= ${C_EXEC_1_NAME}.txt
+TO_INSTALL_LIB		+= 
+TO_INSTALL_PAR		+= ${C_EXEC_1_NAME}.par
+TO_INSTALL_TEMPLATES	+= 
+TO_INSTALL_EXTRA_GLOBAL	+=
+TO_INSTALL_EXTRA_LOCAL	+=
+
+testcommands::	 ${C_EXEC_1_NAME} 
+	echo "nothing to do"
+
