@@ -21,6 +21,7 @@
 #define  MAXPATH 65535  /* Maximum character length of file names */
 #define  BufLen_2      MAXNAMELENGTH /* Required for pfile.h */
 #define  MAXSTRING 1024
+#define  MAX_TARGETS 200
 
 
 // flags to mark the bins with
@@ -43,9 +44,17 @@ typedef struct {
 
 dataspec dataspecs[]={
 			{.name="IBIS_VETO",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MBOT_MCOUNT"},
-			{.name="IBIS_VETO_LAT",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MLAT_MCOUNT"},
-			{.name="ACS",.hrw="SPI.-OACS-HRW",.cnv="SPI.-OACS-CNV",.col="ACS_RATE"},
-			{.name="SPI_VETOGATE",.hrw="SPI.-SCHK-HRW",.cnv="SPI.-SCHK-CNV",.col="P__DF__NVTGT__L"},
+            {.name="IBIS_VETO_LAT",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MLAT_MCOUNT"},
+            {.name="ISGRIRAW_MCE0",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE0"},
+            {.name="ISGRIRAW_MCE1",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE1"},
+            {.name="ISGRIRAW_MCE2",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE2"},
+            {.name="ISGRIRAW_MCE3",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE3"},
+            {.name="ISGRIRAW_MCE4",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE4"},
+            {.name="ISGRIRAW_MCE5",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE5"},
+            {.name="ISGRIRAW_MCE6",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE6"},
+            {.name="ISGRIRAW_MCE7",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE7"},
+            {.name="ACS",.hrw="SPI.-OACS-HRW",.cnv="SPI.-OACS-CNV",.col="ACS_RATE"},
+            {.name="SPI_VETOGATE",.hrw="SPI.-SCHK-HRW",.cnv="SPI.-SCHK-CNV",.col="P__DF__NVTGT__L"},
 			{.name="SPI_VETONONSAT",.hrw="SPI.-SCHK-HRW",.cnv="SPI.-SCHK-CNV",.col="P__DF__CNVT_MBW__L"},
 			{.name="SPI_VETOSAT",.hrw="SPI.-SCHK-HRW",.cnv="SPI.-SCHK-CNV",.col="P__DF__CNVT_MAB__L"},
 			{.name="SPI_GEDRATE0",.hrw="SPI.-SCHK-HRW",.cnv="SPI.-SCHK-CNV",.col="P__DF__CAFTT__L0"},
@@ -58,7 +67,7 @@ dataspec dataspecs[]={
 			{.name="SPTI6",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_6"},
 			{.name="SPTI7",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_7"},
 			{.name="SPTI8",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_8"},
-            {.name="FEE1",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE1"},
+            {.name="FEE1",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE1"}, /// this should be filled automatically
             {.name="FEE2",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE2"},
             {.name="FEE3",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE3"},
             {.name="FEE4",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE4"},
@@ -251,7 +260,7 @@ double phase(double tstart){
 }
 
 // read SPI-ACS lightcurve from the ScW
-int readscw(char *swgfile, dataspec * ds,FILE * outf,double rstart,double rstop,int nrev,long *n,int *pstatus) {
+int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rstart,double rstop,int nrev,long *n,int *pstatus) {
 	dal_element* g=NULL;
 	dal_element* x=NULL;
 	dal_element* x1=NULL;
@@ -285,82 +294,116 @@ int readscw(char *swgfile, dataspec * ds,FILE * outf,double rstart,double rstop,
 		return -1;
 	};
 
-	status=DALobjectFindElement(g,ds->hrw,&x,0);
-	if (RILerror(status,Warning_2,"unable to read %s: skipping",ds->hrw)!=ISDC_OK) return 0;
+    int itarget;
+    long int total_rows=0;
 
-	status=DALobjectFindElement(g,ds->cnv,&x1,0);
-	if (RILerror(status,Warning_2,"unable to read %s: skipping",ds->cnv)!=ISDC_OK) return 0;
+    for (itarget=0;itarget<ntargets;itarget++) {
+        dataspec *ds=dss[itarget];
 
-	long rows;
-	status=DALtableGetNumRows(x,&rows,0);
-	if (RILerror(status,Warning_2,"unable to read: skipping")!=ISDC_OK) return 0;
+        status=DALobjectFindElement(g,ds->hrw,&x,0);
+        if (RILerror(status,Warning_2,"unable to read %s: skipping",ds->hrw)!=ISDC_OK) continue;
 
-	long rows1;
-	status=DALtableGetNumRows(x1,&rows1,0);
-	if (RILerror(status,Warning_2,"unable to read: skipping")!=ISDC_OK) return 0;
+        status=DALobjectFindElement(g,ds->cnv,&x1,0);
+        if (RILerror(status,Warning_2,"unable to read %s: skipping",ds->cnv)!=ISDC_OK) continue;
 
-	if (rows!=rows1) {
-		RILlogMessage(NULL,Warning_2,"inconsistent number of rows: skipping\n");
-		return 0;
-	};
+        long rows;
+        status=DALtableGetNumRows(x,&rows,0);
+        if (RILerror(status,Warning_2,"unable to read: skipping")!=ISDC_OK) return 0;
 
-	RILlogMessage(NULL,Log_1,"%li bins",rows);
+        long rows1;
+        status=DALtableGetNumRows(x1,&rows1,0);
+        if (RILerror(status,Warning_2,"unable to read: skipping")!=ISDC_OK) return 0;
+
+        if (rows!=rows1) {
+            RILlogMessage(NULL,Warning_2,"inconsistent number of rows: skipping\n");
+            return 0;
+        };
+
+        RILlogMessage(NULL,Log_1,"%li bins",rows);
 
 
-	double * rate=malloc(sizeof(double)*rows);
-	double * ijd=malloc(sizeof(double)*rows);
-	OBTime * obt=malloc(sizeof(OBTime)*rows);
+        double * rate=malloc(sizeof(double)*rows);
+        double * ijd=malloc(sizeof(double)*rows);
+        OBTime * obt=malloc(sizeof(OBTime)*rows);
 
-	dal_dataType typ=DAL_DOUBLE;
-	status=DALtableGetCol(x,ds->col,0,&typ,&rows,rate,0);
-	if (RILerror(status,Warning_2,"unable to read the rate")!=ISDC_OK) return 0;
+        dal_dataType typ=DAL_DOUBLE;
+        status=DALtableGetCol(x,ds->col,0,&typ,&rows,rate,0);
+        if (RILerror(status,Warning_2,"unable to read the rate")!=ISDC_OK) return 0;
 
-	status=DAL3GENtableGetOBT(x1,"OB_TIME",0,&rows,obt,0);
-	if (RILerror(status,Warning_2,"unable to read the time")!=ISDC_OK) return 0;
+        status=DAL3GENtableGetOBT(x1,"OB_TIME",0,&rows,obt,0);
+        if (RILerror(status,Warning_2,"unable to read the time")!=ISDC_OK) return 0;
 
-	status=DAL3AUXconvertOBT2IJDRev(nrev,TCOR_ANY,rows,obt,ijd,0);
-	if (RILerror(status,Warning_2,"unable to convert the time")!=ISDC_OK) return 0;
+        status=DAL3AUXconvertOBT2IJDRev(nrev,TCOR_ANY,rows,obt,ijd,0);
+        if (RILerror(status,Warning_2,"unable to convert the time")!=ISDC_OK) return 0;
 
-	int i;
-	int nbadtimes=0;
+        int i;
+        int nbadtimes=0;
 
-	for (i=0;i<rows;i++) {
-		if (ijd[i]<tstart || ijd[i]>tstop) {
-			//RILlogMessage(NULL,Log_2,"bad time: %.15lg",ijd[i]);
-			nbadtimes++;
-		//	continue;
-		};
-		
-		if (ijd[i]<rstart) {
-			continue;
-		};
-		
-		if (ijd[i]>rstop) {
-			break;
-		};
+        for (i=0;i<rows;i++) {
+            if (ijd[i]<tstart || ijd[i]>tstop) {
+                //RILlogMessage(NULL,Log_2,"bad time: %.15lg",ijd[i]);
+                nbadtimes++;
+            //	continue;
+            };
+            
+            if (ijd[i]<rstart) {
+                continue;
+            };
+            
+            if (ijd[i]>rstop) {
+                break;
+            };
 
-		double _ijd=ijd[i];
-		//if (timecorr125ms) _ijd-=0.125/24./3600.;
-		fprintf(outf,"%.20lg %.10lg %.5lg %.15lg\n",_ijd,(_ijd-rstart)*24.*3600.,rate[i],sid_ref+(_ijd-rstart)*24.*3600.);
-		//printf("%i %.20lg %.10lg\n",i,r_times[*n],rate[i]);
-		(*n)++;
-	};
+            double _ijd=ijd[i];
+            
+            if (ntargets==1)
+                fprintf(outf,"%.20lg %.10lg %.5lg %.15lg\n",_ijd,(_ijd-rstart)*24.*3600.,rate[i],sid_ref+(_ijd-rstart)*24.*3600.);
+            else
+                fprintf(outf,"%.20lg %.10lg %.5lg %.15lg %i %s\n",_ijd,(_ijd-rstart)*24.*3600.,rate[i],sid_ref+(_ijd-rstart)*24.*3600.,itarget,ds->name);
 
-	RILlogMessage(NULL,Log_2,"filled to %i, %i bad times excluded\n",*n,nbadtimes);
+            (*n)++;
+        };
 
-	free(rate);
-	free(ijd);
-	free(obt);
+        RILlogMessage(NULL,Log_2,"filled to %i, %i bad times excluded\n",*n,nbadtimes);
 
-	status=DALobjectClose(g,DAL_SAVE,0);
-	if (RILerror(status,Warning_2,"unable to close the ScW")!=ISDC_OK) return 0;
+        free(rate);
+        free(ijd);
+        free(obt);
 
-	*pstatus=status;
 
-	return rows-nbadtimes;
+        *pstatus=0;
+        //*pstatus=status;
+        total_rows+=rows-nbadtimes;
+    };
+    status=DALobjectClose(g,DAL_SAVE,0);
+    if (RILerror(status,Warning_2,"unable to close the ScW")!=ISDC_OK) return 0;
+
+	return total_rows;
 };
 
-// write the output
+char split_targets(char target_list_str[],char *targets[]) {
+    char *token;
+    int i=0;
+    while ((token = strsep(&target_list_str, ",")) && (i<MAX_TARGETS))  {
+        if (strcmp(token,"FEEALL")==0) {
+            int ifee;
+            for (ifee=1;ifee<=91;ifee++) {
+                asprintf(&targets[i++],"FEE%i",ifee);
+                printf("adding %s",targets[i-1]);
+            };
+        } else if (strcmp(token,"ISGRIRAW")==0) {
+            int ifee;
+            for (ifee=0;ifee<=7;ifee++) {
+                asprintf(&targets[i++],"ISGRIRAW_MCE%i",ifee);
+                printf("adding %s",targets[i-1]);
+            };
+        } else {
+            targets[i++]=token;
+            printf("adding %s",targets[i-1]);
+        };
+    };
+    return i;
+};
 
 int dump_spiacs(){
 	RILlogMessage(NULL,Log_0,"Running %s %s",TOOLNAME,TOOLVERSION);
@@ -384,7 +427,9 @@ int dump_spiacs(){
 	char start_utc[MAXPATH];
 	char stop_utc[MAXPATH];
 	
-    char target[MAXPATH];
+    char target_list_str[MAXPATH];
+    char *targets[MAX_TARGETS];
+    char ntargets=0;
 
 	double tstart,tstop;
 
@@ -407,7 +452,7 @@ int dump_spiacs(){
 	flags=malloc(sizeof(TFLAG)*MAXBINS);
 
 	RILerror(PILGetString("output",outputfile),Error_0,"Problem getting \"output\" parameter");
-	RILerror(PILGetString("target",target),Error_0,"");
+	RILerror(PILGetString("target",target_list_str),Error_0,"");
 	RILerror(PILGetString("start_time_utc",start_utc),Error_0,"");
 	RILerror(PILGetString("stop_time_utc",stop_utc),Error_0,"");
 	RILerror(PILGetReal("orbit_accy",&orbit_accy),Error_0,"");
@@ -415,22 +460,30 @@ int dump_spiacs(){
 
 	RILerror(PILGetInt("mode",&mode),Error_0,"Problem getting mode parameter");
 
+    ntargets=split_targets(target_list_str,targets);
+
+
 	double start_ijd,stop_ijd;
 
-    dataspec * ds;
+    dataspec * ds[MAX_TARGETS];
 
-    for (ds=dataspecs;ds->name[0]!=0;++ds) {
-        //RILlogMessage(NULL,Log_2,"check %s for %s",ds->name,target);
-        if (strcmp(ds->name,target)==0) {
-            RILlogMessage(NULL,Log_2,"target %s selected",ds->name);
-            break;
+    i=0;
+    for (i=0;i<ntargets;i++) {
+        printf("target: %i %s\n",i,targets[i]);
+        dataspec * ids;
+        for (ids=dataspecs;ids->name[0]!=0;++ids) {
+            ds[i]=ids;
+            if (strcmp(ds[i]->name,targets[i])==0) {
+                RILlogMessage(NULL,Log_2,"target %s selected",ds[i]->name);
+                break;
+            };
+        };
+        if (ds[i]->name[0]==0) {
+            RILerror(-1,Error_0,"unknown target %s",targets[i]);
+            return -1;
         };
     };
 
-    if (ds->name[0]==0) {
-        RILerror(-1,Error_0,"unknown target %s",target);
-        return -1;
-    };
 
 
 	int astatus=ISDC_OK;
@@ -536,7 +589,7 @@ int dump_spiacs(){
 		strncpy(swgfile,scwdir,MAXPATH);
 		strncat(swgfile,"/swg.fits",MAXPATH);
 
-		nread=readscw(swgfile,ds,outfile,start_ijd,stop_ijd,rev,&cn,&status);
+		nread=readscw(swgfile,ds,ntargets,outfile,start_ijd,stop_ijd,rev,&cn,&status);
 		fflush(outfile);
 
 		if (nread>0) maxfiles--;
@@ -545,10 +598,6 @@ int dump_spiacs(){
 	free(filelist);
 
 	fclose(outfile);
-
-	/*for (i=0;i<cn;i++) {
-	  printf("%i %.20lg\n",i,r_times[i]);
-	  };*/
 
 	RILlogMessage(NULL,Log_2,"Read %d ScW files with %i bins\n",n,cn);
 
