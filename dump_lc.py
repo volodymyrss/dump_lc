@@ -121,6 +121,12 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None):
     if re.search("Fatal! Execution failed with exit code -25501",output):
         raise NoAuxData()
     
+    if re.search("Fatal! Execution failed with exit code -25502",output):
+        raise NoAuxData()
+    
+    if re.search("Fatal! Execution failed with exit code -2550",output):
+        raise NoAuxData()
+    
     if re.search("overrevolution!",output):
         raise OverRevolution()
 
@@ -136,9 +142,14 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None):
     if errors!=[]:
         print "noticed warnings in the output:",errors
 
+    def sfloat(x):
+        try:
+            return float(x)
+        except:
+            return 0
 
  #   print result
-    if mode==0 and all([float(a.split()[2])==0 for a in result.split("\n") if len(a.split())==4]):
+    if mode==0 and all([sfloat(a.split()[2])==0 for a in result.split("\n") if len(a.split())>=4]):
         raise ZeroData()
 
     print "leaving dump_lc"
