@@ -1,4 +1,8 @@
-import spiacs_config
+try:
+    import spiacs_config
+except ImportError:
+    print("no spiacs-config: standalone")
+
 import copy,tempfile,os,subprocess,re,resource,fcntl
 
 class DumpLCException(Exception):
@@ -57,9 +61,16 @@ def close_all(f):
     return nf
 
 @close_all
-def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None):
+def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_lc_path=None):
+    if dump_lc_path is None:
+        dump_lc_binary=spiacs_config.dump_lc_binary
+        dump_lc_path=spiacs_config.dump_lc_path
+    else:
+        dump_lc_binary=dump_lc_path+"/dump_lc"
+
+
     tf=tempfile.mkstemp(suffix="acs")
-    command=[spiacs_config.dump_lc_binary,
+    command=[dump_lc_binary,
             "start_time_utc="+utc1,
             "stop_time_utc="+utc2,
             "target="+target,
@@ -68,7 +79,7 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None):
             "mode=%i"%mode]
 
     env=copy.deepcopy(os.environ)
-    env['PFILES']=spiacs_config.dump_lc_path
+    env['PFILES']=dump_lc_path
     env['REP_BASE_PROD']=rbp
 
     print "command:"," ".join(command)
