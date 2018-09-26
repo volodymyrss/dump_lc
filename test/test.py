@@ -4,7 +4,7 @@ import subprocess
 class TestDumpLC(unittest.TestCase):
     def test_spti1234(self):
         subprocess.check_call([
-                "../dump_ihkilc",
+                "../dump_ihklc",
                 "mode=0",
                 "start_time_utc=2008-03-19T05:35:00",
                 "stop_time_utc=2008-03-19T05:35:02",
@@ -17,7 +17,7 @@ class TestDumpLC(unittest.TestCase):
 
     def test_short(self):
         subprocess.check_call([
-                "../dump_ihkilc",
+                "../dump_ihklc",
                 "mode=0",
                 "start_time_utc=2008-03-19T05:35:00",
                 "stop_time_utc=2008-03-19T05:35:02",
