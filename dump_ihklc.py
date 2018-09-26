@@ -1,9 +1,22 @@
 try:
     import spiacs_config
+    have_spiacs_config=True
 except ImportError:
     print("no spiacs-config: standalone")
+    have_spiacs_config=False
 
-import copy,tempfile,os,subprocess,re,resource,fcntl
+import copy
+import tempfile
+import os
+import subprocess
+import re
+import resource
+import fcntl
+
+import shutil
+import shutilwhich
+
+import pandas as pd
 
 class DumpLCException(Exception):
     pass
@@ -63,54 +76,67 @@ def close_all(f):
 @close_all
 def dump_ihklc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihklc_path=None):
     if dump_ihklc_path is None:
-        dump_ihklc_binary=spiacs_config.dump_ihklc_binary
-        dump_ihklc_path=spiacs_config.dump_ihklc_path
+        if have_spiacs_config:
+            dump_ihklc_binary=spiacs_config.dump_ihklc_binary
+            dump_ihklc_path=spiacs_config.dump_ihklc_path
+        else:
+            dump_ihklc_binary=shutil.which("dump_ihklc")
+            dump_ihklc_path=os.path.dirname(dump_ihklc_binary)
     else:
         dump_ihklc_binary=dump_ihklc_path+"/dump_ihklc"
 
+    if rbp is None:
+        try:
+            return dump_ihklc(utc1,utc2,mode=mode,target=target,rbp=os.environ.get('REP_BASE_PROD_CONS'),
+                        dump_ihklc_path=dump_ihklc_path)
+        except Exception as e:
+            print("unable to extract from CONS",e)
+            return dump_ihklc(utc1,utc2,mode=mode,target=target,rbp=os.environ.get('REP_BASE_PROD_NRT'),
+                        dump_ihklc_path=dump_ihklc_path)
 
-    tf=tempfile.mkstemp(suffix="acs")
+    temp_dir=tempfile.mkdtemp(suffix="ihklc")
+    output_file=os.path.join(temp_dir,"output_data.txt")
+
     command=[dump_ihklc_binary,
             "start_time_utc="+utc1,
             "stop_time_utc="+utc2,
             "target="+target,
-            "output="+tf[1],
+            "output="+output_file,
             "orbit_accy=30",
             "mode=%i"%mode]
 
     env=copy.deepcopy(os.environ)
-    env['PFILES']=dump_ihklc_path
+
+    print "env PFILES:",env['PFILES']
+    env['PFILES']=temp_dir+";"+env['PFILES'].split(";")[-1]
     env['REP_BASE_PROD']=rbp
 
     print "command:"," ".join(command)
-    print "env:",env['PFILES']
+    print "using PFILES:",env['PFILES']
 
-    #otf=tempfile.mkstemp()
-    #otfh=open(otf[1])
 
     exception=None
     try:
         output=subprocess.check_output(command,env=env)
+        os.remove(os.path.join(temp_dir,"dump_ihklc.par"))
     except subprocess.CalledProcessError as e:
         exception=e
         print "dump_ihklc returns",repr(e)
         output=exception.output
 
     try:
-        off=open(tf[1])
-        result="".join(list(off))
-        off.close()
-        os.remove(tf[1])
-        os.close(tf[0])
+        result_raw=open(output_file).read()
+        result=pd.read_csv( output_file,
+                            delim_whitespace=True,
+                            names=["ijd","t_rel_s","counts","t_sod_s"],
+                            usecols=[0,1,2,3],
+                            skiprows=5)
+        os.remove(output_file)
     except Exception as e:
         print "could not read temp file?.."
         raise
-   # p.wait()
 
-    #output="\n".join(list(otfh))
-
-    #otfh.close()
-    #os.remove(otf[1])
+    os.rmdir(temp_dir)
 
     print "output:",output
 
@@ -160,9 +186,9 @@ def dump_ihklc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihklc_path=None):
             return 0
 
  #   print result
-    if mode==0 and all([sfloat(a.split()[2])==0 for a in result.split("\n") if len(a.split())>=4]):
+    if mode==0 and all([sfloat(a.split()[2])==0 for a in result_raw.split("\n") if len(a.split())>=4]):
         raise ZeroData()
 
     print "leaving dump_ihklc"
 
-    return result,output
+    return result_raw,result,output

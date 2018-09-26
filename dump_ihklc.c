@@ -334,7 +334,7 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
         if (RILerror(status,Warning_2,"unable to read the time")!=ISDC_OK) return 0;
 
         status=DAL3AUXconvertOBT2IJDRev(nrev,TCOR_ANY,rows,obt,ijd,0);
-        if (RILerror(status,Warning_2,"unable to convert the time")!=ISDC_OK) return 0;
+        if (RILerror(status,Warning_2,"unable to convert the time %i",status)!=ISDC_OK) return 0;
 
         int i;
         int nbadtimes=0;
