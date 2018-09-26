@@ -23,7 +23,7 @@ class OverRevolution(DumpLCException):
 #class DumpLCInternalException(DumpLCException):
 class DumpLCUnhandledException(Exception):
     def __init__(self):
-        DumpLCException.__init__(self,"dump_lc returned non-zero")
+        DumpLCException.__init__(self,"dump_ihkilc returned non-zero")
 
 class NoData(DumpLCException):
     def __init__(self,s=""):
@@ -61,16 +61,16 @@ def close_all(f):
     return nf
 
 @close_all
-def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_lc_path=None):
-    if dump_lc_path is None:
-        dump_lc_binary=spiacs_config.dump_lc_binary
-        dump_lc_path=spiacs_config.dump_lc_path
+def dump_ihkilc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihkilc_path=None):
+    if dump_ihkilc_path is None:
+        dump_ihkilc_binary=spiacs_config.dump_ihkilc_binary
+        dump_ihkilc_path=spiacs_config.dump_ihkilc_path
     else:
-        dump_lc_binary=dump_lc_path+"/dump_lc"
+        dump_ihkilc_binary=dump_ihkilc_path+"/dump_ihkilc"
 
 
     tf=tempfile.mkstemp(suffix="acs")
-    command=[dump_lc_binary,
+    command=[dump_ihkilc_binary,
             "start_time_utc="+utc1,
             "stop_time_utc="+utc2,
             "target="+target,
@@ -79,7 +79,7 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_lc_path=None):
             "mode=%i"%mode]
 
     env=copy.deepcopy(os.environ)
-    env['PFILES']=dump_lc_path
+    env['PFILES']=dump_ihkilc_path
     env['REP_BASE_PROD']=rbp
 
     print "command:"," ".join(command)
@@ -93,7 +93,7 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_lc_path=None):
         output=subprocess.check_output(command,env=env)
     except subprocess.CalledProcessError as e:
         exception=e
-        print "dump_lc returns",repr(e)
+        print "dump_ihkilc returns",repr(e)
         output=exception.output
 
     try:
@@ -163,6 +163,6 @@ def dump_lc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_lc_path=None):
     if mode==0 and all([sfloat(a.split()[2])==0 for a in result.split("\n") if len(a.split())>=4]):
         raise ZeroData()
 
-    print "leaving dump_lc"
+    print "leaving dump_ihkilc"
 
     return result,output

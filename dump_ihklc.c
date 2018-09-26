@@ -13,7 +13,7 @@
 
 
 
-#define  TOOLNAME "dump_lc"
+#define  TOOLNAME "dump_ihkilc"
 #define  TOOLVERSION "1.0"
 #define  MAXFILE 40000      /* Maximum number of input files */
 #define  MAXBINS 20000000      /* Maximum number of input files */
