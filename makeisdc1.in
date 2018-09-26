@@ -1,4 +1,4 @@
-C_EXEC_1_NAME		= dump_ihkilc
+C_EXEC_1_NAME		= dump_ihklc
 
 TAR_FILE_NAME		= ${C_EXEC_1_NAME}-3.2
 C_EXEC_1_SOURCES	= ${C_EXEC_1_NAME}.C 

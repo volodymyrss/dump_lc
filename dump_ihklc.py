@@ -23,7 +23,7 @@ class OverRevolution(DumpLCException):
 #class DumpLCInternalException(DumpLCException):
 class DumpLCUnhandledException(Exception):
     def __init__(self):
-        DumpLCException.__init__(self,"dump_ihkilc returned non-zero")
+        DumpLCException.__init__(self,"dump_ihklc returned non-zero")
 
 class NoData(DumpLCException):
     def __init__(self,s=""):
@@ -61,16 +61,16 @@ def close_all(f):
     return nf
 
 @close_all
-def dump_ihkilc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihkilc_path=None):
-    if dump_ihkilc_path is None:
-        dump_ihkilc_binary=spiacs_config.dump_ihkilc_binary
-        dump_ihkilc_path=spiacs_config.dump_ihkilc_path
+def dump_ihklc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihklc_path=None):
+    if dump_ihklc_path is None:
+        dump_ihklc_binary=spiacs_config.dump_ihklc_binary
+        dump_ihklc_path=spiacs_config.dump_ihklc_path
     else:
-        dump_ihkilc_binary=dump_ihkilc_path+"/dump_ihkilc"
+        dump_ihklc_binary=dump_ihklc_path+"/dump_ihklc"
 
 
     tf=tempfile.mkstemp(suffix="acs")
-    command=[dump_ihkilc_binary,
+    command=[dump_ihklc_binary,
             "start_time_utc="+utc1,
             "stop_time_utc="+utc2,
             "target="+target,
@@ -79,7 +79,7 @@ def dump_ihkilc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihkilc_path=None):
             "mode=%i"%mode]
 
     env=copy.deepcopy(os.environ)
-    env['PFILES']=dump_ihkilc_path
+    env['PFILES']=dump_ihklc_path
     env['REP_BASE_PROD']=rbp
 
     print "command:"," ".join(command)
@@ -93,7 +93,7 @@ def dump_ihkilc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihkilc_path=None):
         output=subprocess.check_output(command,env=env)
     except subprocess.CalledProcessError as e:
         exception=e
-        print "dump_ihkilc returns",repr(e)
+        print "dump_ihklc returns",repr(e)
         output=exception.output
 
     try:
@@ -163,6 +163,6 @@ def dump_ihkilc(utc1,utc2,mode=0,target="ACS",rbp=None,dump_ihkilc_path=None):
     if mode==0 and all([sfloat(a.split()[2])==0 for a in result.split("\n") if len(a.split())>=4]):
         raise ZeroData()
 
-    print "leaving dump_ihkilc"
+    print "leaving dump_ihklc"
 
     return result,output
