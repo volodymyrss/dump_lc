@@ -67,6 +67,7 @@ dataspec dataspecs[]={
 			{.name="SPTI6",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_6"},
 			{.name="SPTI7",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_7"},
 			{.name="SPTI8",.hrw="PICS-SPTI-RAW",.cnv="PICS-SPTI-CPR",.col="CELL_8"},
+            {.name="FEE0",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE0"}, /// this should be filled automatically
             {.name="FEE1",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE1"}, /// this should be filled automatically
             {.name="FEE2",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE2"},
             {.name="FEE3",.hrw="SPI.-FEE0-HRW",.cnv="SPI.-FEE0-CNV",.col="FEE3"},
@@ -158,6 +159,7 @@ dataspec dataspecs[]={
             {.name="FEE89",.hrw="SPI.-FEEB-HRW",.cnv="SPI.-FEEB-CNV",.col="FEE89"},
             {.name="FEE90",.hrw="SPI.-FEEB-HRW",.cnv="SPI.-FEEB-CNV",.col="FEE90"},
             {.name="FEE91",.hrw="SPI.-FEEB-HRW",.cnv="SPI.-FEEB-CNV",.col="FEE91"},
+            {.name="PSAC",.hrw="SPI.-FEEB-HRW",.cnv="SPI.-FEEB-CNV",.col="FEE91"},
 			{.name="\0",.hrw="",.cnv="",.col=""}
 		};
 
