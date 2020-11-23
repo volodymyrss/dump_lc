@@ -43,7 +43,8 @@ typedef struct {
 } dataspec;
 
 dataspec dataspecs[]={
-			{.name="TCS__TH__TANK1__TOP",.hrw="INTL-SVM2-HRW",.cnv="INTL-SVM2-CNV",.col="TCS__TH__TANK1__TOP"},
+			{.name="TANK2",.hrw="INTL-SVM1-CNV",.cnv="INTL-SVM1-CNV",.col="TCS__TH__TANK2__TOP"},
+			//{.name="TANK1",.hrw="INTL-SVM2-HRW",.cnv="INTL-SVM2-CNV",.col="TCS__TH__TANK1__TOP"},
 			{.name="IBIS_VETO",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MBOT_MCOUNT"},
             {.name="IBIS_VETO_LAT",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MLAT_MCOUNT"},
             {.name="ISGRIRAW_MCE0",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE0"},
@@ -302,6 +303,8 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
 
     for (itarget=0;itarget<ntargets;itarget++) {
         dataspec *ds=dss[itarget];
+        
+        RILlogMessage(NULL,Log_1,"will open itarget %i name %s column %s", itarget, ds->name, ds->col);
 
         status=DALobjectFindElement(g,ds->hrw,&x,0);
         if (RILerror(status,Warning_2,"unable to read %s: skipping",ds->hrw)!=ISDC_OK) continue;
@@ -329,7 +332,27 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
         double * ijd=malloc(sizeof(double)*rows);
         OBTime * obt=malloc(sizeof(OBTime)*rows);
 
-        dal_dataType typ=DAL_DOUBLE;
+        dal_dataType typ;
+        //dal_dataType typ=DAL_FLOAT;
+        
+        int numCols=0;
+        status = DALtableGetNumCols(x, &numCols, status);
+        RILlogMessage(NULL,Warning_2,"found cols in the table %i\n", numCols);
+
+        char colName[DAL_MAX_NAME_SIZE];
+        long numValues=0;
+        int varLen=0;
+        int i;
+        for (i=1;i<numCols+1;i++) {
+            status = DALtableGetColStruct(x,i,NULL,colName,&typ,&numValues,&varLen,status);
+            RILlogMessage(NULL,Warning_2,"found col %i %s %i %i %i\n", i, colName, typ, numValues, varLen);
+            if (strcmp(colName, ds->col) == 0) {
+                RILlogMessage(NULL,Warning_2,"this is our col!");
+                break;
+            }
+        }
+
+        typ=DAL_DOUBLE;
         status=DALtableGetCol(x,ds->col,0,&typ,&rows,rate,0);
         if (RILerror(status,Warning_2,"unable to read the rate")!=ISDC_OK) return 0;
 
@@ -339,7 +362,6 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
         status=DAL3AUXconvertOBT2IJDRev(nrev,TCOR_ANY,rows,obt,ijd,0);
         if (RILerror(status,Warning_2,"unable to convert the time")!=ISDC_OK) return 0;
 
-        int i;
         int nbadtimes=0;
 
         for (i=0;i<rows;i++) {
@@ -360,7 +382,7 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
             double _ijd=ijd[i];
             
             if (ntargets==1)
-                fprintf(outf,"%.20lg %.10lg %.5lg %.15lg\n",_ijd,(_ijd-rstart)*24.*3600.,rate[i],sid_ref+(_ijd-rstart)*24.*3600.);
+                fprintf(outf,"%.20lg %.10lg %.5lg %.15lg\n",_ijd,(_ijd-rstart)*24.*3600.,(double)(rate[i]),sid_ref+(_ijd-rstart)*24.*3600.);
             else
                 fprintf(outf,"%.20lg %.10lg %.5lg %.15lg %i %s\n",_ijd,(_ijd-rstart)*24.*3600.,rate[i],sid_ref+(_ijd-rstart)*24.*3600.,itarget,ds->name);
 
@@ -392,17 +414,17 @@ char split_targets(char target_list_str[],char *targets[]) {
             int ifee;
             for (ifee=1;ifee<=91;ifee++) {
                 asprintf(&targets[i++],"FEE%i",ifee);
-                printf("adding %s",targets[i-1]);
+                printf("adding %s\n",targets[i-1]);
             };
         } else if (strcmp(token,"ISGRIRAW")==0) {
             int ifee;
             for (ifee=0;ifee<=7;ifee++) {
                 asprintf(&targets[i++],"ISGRIRAW_MCE%i",ifee);
-                printf("adding %s",targets[i-1]);
+                printf("adding %s\n",targets[i-1]);
             };
         } else {
             targets[i++]=token;
-            printf("adding %s",targets[i-1]);
+            printf("adding %s\n",targets[i-1]);
         };
     };
     return i;
@@ -472,13 +494,15 @@ int dump_spiacs(){
 
     i=0;
     for (i=0;i<ntargets;i++) {
-        printf("target: %i %s\n",i,targets[i]);
+        printf("requested target: %i %s\n",i,targets[i]);
         dataspec * ids;
         for (ids=dataspecs;ids->name[0]!=0;++ids) {
             ds[i]=ids;
             if (strcmp(ds[i]->name,targets[i])==0) {
-                RILlogMessage(NULL,Log_2,"target %s selected",ds[i]->name);
+                RILlogMessage(NULL,Log_2,"target %i %s selected\n", i,ds[i]->name);
                 break;
+            } else {
+                RILlogMessage(NULL,Log_2,"not selected %s comparing %s\n",ds[i]->name, targets[i]);
             };
         };
         if (ds[i]->name[0]==0) {
