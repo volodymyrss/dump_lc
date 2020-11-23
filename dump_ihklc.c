@@ -43,6 +43,8 @@ typedef struct {
 } dataspec;
 
 dataspec dataspecs[]={
+			{.name="TCS__TH__TANK1__TOP",.hrw="INTL-SVM2-CNV",.cnv="INTL-SVM2-CNV",.col="TCS__TH__TANK1__TOP"},
+			{.name="TCS__TH__TANK2__TOP",.hrw="INTL-SVM1-CNV",.cnv="INTL-SVM1-CNV",.col="TCS__TH__TANK2__TOP"},
 			{.name="IBIS_VETO",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MBOT_MCOUNT"},
             {.name="IBIS_VETO_LAT",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MLAT_MCOUNT"},
             {.name="ISGRIRAW_MCE0",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="I0S_MEVTCNT_MMCE0"},
@@ -328,7 +330,11 @@ int readscw(char *swgfile, dataspec * dss[],char ntargets,FILE * outf,double rst
         double * ijd=malloc(sizeof(double)*rows);
         OBTime * obt=malloc(sizeof(OBTime)*rows);
 
+        //dal_dataType typ=DAL_FLOAT;
         dal_dataType typ=DAL_DOUBLE;
+
+        RILlogMessage(NULL,Warning_2,"reading col %s\n", ds->col);
+
         status=DALtableGetCol(x,ds->col,0,&typ,&rows,rate,0);
         if (RILerror(status,Warning_2,"unable to read the rate")!=ISDC_OK) return 0;
 
@@ -391,17 +397,17 @@ char split_targets(char target_list_str[],char *targets[]) {
             int ifee;
             for (ifee=1;ifee<=91;ifee++) {
                 asprintf(&targets[i++],"FEE%i",ifee);
-                printf("adding %s",targets[i-1]);
+                printf("adding %s\n",targets[i-1]);
             };
         } else if (strcmp(token,"ISGRIRAW")==0) {
             int ifee;
             for (ifee=0;ifee<=7;ifee++) {
                 asprintf(&targets[i++],"ISGRIRAW_MCE%i",ifee);
-                printf("adding %s",targets[i-1]);
+                printf("adding %s\n",targets[i-1]);
             };
         } else {
             targets[i++]=token;
-            printf("adding %s",targets[i-1]);
+            printf("adding %s\n",targets[i-1]);
         };
     };
     return i;
