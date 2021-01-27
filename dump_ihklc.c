@@ -43,6 +43,7 @@ typedef struct {
 } dataspec;
 
 dataspec dataspecs[]={
+			{.name="BW__CREDIT__IBIS1",.hrw="INTL-CDMU-HRW",.cnv="INTL-CDMU-CNV",.col="BW__CREDIT__IBIS1"},
 			{.name="TCS__TH__TANK1__TOP",.hrw="INTL-SVM2-CNV",.cnv="INTL-SVM2-CNV",.col="TCS__TH__TANK1__TOP"},
 			{.name="TCS__TH__TANK2__TOP",.hrw="INTL-SVM1-CNV",.cnv="INTL-SVM1-CNV",.col="TCS__TH__TANK2__TOP"},
 			{.name="IBIS_VETO",.hrw="IBIS-DPE.-HRW",.cnv="IBIS-DPE.-CNV",.col="V1S_MBOT_MCOUNT"},
@@ -209,7 +210,7 @@ int acsdump_xyz2radec(double x, double y, double z, double *ra, double *dec, dou
  }
 
 
-inline int RILerror(int status,MessageType mt, const char* format, ... ) {
+int RILerror(int status,MessageType mt, const char* format, ... ) {
     if (status==ISDC_OK) return status;
 
     char str[MAXSTRING]="";
